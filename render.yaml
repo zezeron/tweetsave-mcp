@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: tweetsave-mcp
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:http
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
