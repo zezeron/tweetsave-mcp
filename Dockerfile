@@ -1,3 +1,22 @@
+# Stage 1: Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY tsconfig.json ./
+COPY src ./src
+
+# Build TypeScript
+RUN npm run build
+
+# Stage 2: Production
 FROM node:20-alpine
 
 WORKDIR /app
@@ -8,8 +27,8 @@ COPY package*.json ./
 # Install production dependencies only
 RUN npm ci --only=production
 
-# Copy compiled code
-COPY dist ./dist
+# Copy compiled code from builder
+COPY --from=builder /app/dist ./dist
 
 # Set environment
 ENV PORT=3000
