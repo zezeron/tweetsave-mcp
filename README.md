@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://tweetsave.org/logoType.png" alt="TweetSave" width="400">
+  <img src="https://tweetsave.org/appIcon.png" alt="TweetSave" width="120">
 </p>
 
 <p align="center">
