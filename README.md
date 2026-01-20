@@ -1,8 +1,33 @@
-# TweetSave MCP Server
+<p align="center">
+  <img src="https://tweetsave.org/logoType.png" alt="TweetSave" width="400">
+</p>
 
-An MCP (Model Context Protocol) server that fetches Twitter/X content and converts it to readable blog post format. Works with Claude, GPT, and other AI assistants that support MCP.
+<p align="center">
+  <a href="https://www.npmjs.org/package/tweetsave-mcp"><img src="https://img.shields.io/npm/v/tweetsave-mcp.svg" alt="npm version"></a>
+  <a href="https://www.npmjs.org/package/tweetsave-mcp"><img src="https://img.shields.io/npm/dm/tweetsave-mcp.svg" alt="npm downloads"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
 
-**No Twitter API key required** - Uses FxTwitter API (free, open source).
+<p align="center">
+  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/MCP-Compatible-blue" alt="MCP Server"></a>
+  <a href="https://claude.ai"><img src="https://img.shields.io/badge/Claude-Ready-orange" alt="Claude"></a>
+  <a href="https://mcp.tweetsave.org/health"><img src="https://img.shields.io/badge/Server-Online-brightgreen" alt="Server Status"></a>
+</p>
+
+<p align="center">
+  MCP server for fetching Twitter/X content and converting to blog posts.<br>
+  <strong>No Twitter API key required</strong> - Uses FxTwitter API (free, open source).
+</p>
+
+<p align="center">
+  <a href="https://tweetsave.org">Website</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#features">Features</a> •
+  <a href="#installation-methods">Installation</a> •
+  <a href="#available-tools-mcp">Tools</a>
+</p>
+
+---
 
 ## Features
 
