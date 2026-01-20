@@ -17,20 +17,30 @@ An MCP (Model Context Protocol) server that fetches Twitter/X content and conver
 
 ## Quick Start
 
-### Option 1: npx (Easiest)
+### Option 1: Remote MCP (Recommended)
+
+No installation required - connect directly to hosted server:
 
 ```bash
-npx tweetsave-mcp
+npx mcp-remote https://mcp.tweetsave.org/sse
 ```
 
-### Option 2: Global Install
+**Live endpoint:** `https://mcp.tweetsave.org/sse`
+
+### Option 2: npx (Local)
+
+```bash
+npx -y tweetsave-mcp
+```
+
+### Option 3: Global Install
 
 ```bash
 npm install -g tweetsave-mcp
 tweetsave-mcp
 ```
 
-### Option 3: From Source
+### Option 4: From Source
 
 ```bash
 git clone https://github.com/zezeron/tweetsave-mcp
@@ -43,7 +53,55 @@ npm start
 
 ## Installation Methods
 
-### Method 1: Local CLI Usage
+### Method 1: Remote MCP (Recommended)
+
+Connect to hosted server - no local installation needed.
+
+#### Claude CLI
+
+```bash
+claude mcp add tweetsave -- npx -y mcp-remote https://mcp.tweetsave.org/sse
+```
+
+#### Claude Desktop / Cursor / VS Code / Windsurf
+
+Add to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "tweetsave": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.tweetsave.org/sse"]
+    }
+  }
+}
+```
+
+#### Gemini CLI
+
+```bash
+gemini mcp add tweetsave "npx -y mcp-remote https://mcp.tweetsave.org/sse"
+```
+
+#### JetBrains IDEs
+
+Settings → Tools → AI Assistant → Model Context Protocol:
+
+```json
+{
+  "servers": {
+    "tweetsave": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.tweetsave.org/sse"]
+    }
+  }
+}
+```
+
+---
+
+### Method 2: Local CLI Usage
 
 For personal use with Claude CLI or Claude Desktop.
 
@@ -206,6 +264,8 @@ PORT=8080 npm run start:http
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
+| `/sse` | GET | SSE endpoint for MCP clients |
+| `/messages?sessionId=X` | POST | MCP message handler |
 | `/api/tweet/:id` | GET | Fetch tweet |
 | `/api/tweet/:id?format=json` | GET | Tweet as JSON |
 | `/api/tweet/:id?format=markdown` | GET | Tweet as Markdown |
@@ -531,7 +591,8 @@ npm run start:http
 tweetsave-mcp/
 ├── src/
 │   ├── index.ts           # MCP Server (stdio transport)
-│   ├── http-server.ts     # HTTP Server (cloud deployment)
+│   ├── http-server.ts     # HTTP/SSE Server (cloud deployment)
+│   ├── tools.ts           # Shared MCP tool definitions
 │   ├── types.ts           # TypeScript interfaces
 │   ├── twitter/
 │   │   └── client.ts      # FxTwitter API client
