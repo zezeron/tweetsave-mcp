@@ -111,11 +111,45 @@ gemini mcp add tweetsave "npx -y mcp-remote https://mcp.tweetsave.org/sse"
 
 #### JetBrains IDEs
 
-Settings → Tools → AI Assistant → Model Context Protocol:
+Settings → Tools → MCP Server → Add:
+
+- **Name:** TweetSave
+- **Command:** npx
+- **Arguments:** -y mcp-remote https://mcp.tweetsave.org/sse
+
+#### OpenCode
+
+```bash
+opencode mcp add
+```
+
+Then follow prompts:
+- **Name:** tweetsave
+- **Type:** Remote
+- **URL:** https://mcp.tweetsave.org/sse
+- **OAuth:** No
+
+Or edit `~/.config/opencode/opencode.json`:
 
 ```json
 {
-  "servers": {
+  "mcp": {
+    "tweetsave": {
+      "type": "remote",
+      "url": "https://mcp.tweetsave.org/sse",
+      "enabled": true
+    }
+  }
+}
+```
+
+#### Antigravity
+
+Click `...` menu → MCP → Manage MCP Server → View raw config:
+
+```json
+{
+  "mcpServers": {
     "tweetsave": {
       "command": "npx",
       "args": ["-y", "mcp-remote", "https://mcp.tweetsave.org/sse"]
