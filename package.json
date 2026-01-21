@@ -1,6 +1,7 @@
 {
   "name": "tweetsave-mcp",
-  "version": "1.0.1",
+  "mcpName": "io.github.zezeron/tweetsave-mcp",
+  "version": "1.0.2",
   "description": "MCP server for fetching Twitter/X content and converting to blog posts. Works with Claude, GPT, and other AI assistants.",
   "type": "module",
   "main": "dist/index.js",
