@@ -95,7 +95,7 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
     res.end(JSON.stringify({ status: "deploying" }));
 
     exec(
-      "cd ~/tweetsave-mcp && git pull origin main && npm install --production && npm run build && pm2 restart tweetsave-mcp",
+      "cd ~/tweetsave-mcp && git pull origin main && npm install && npm run build && pm2 restart tweetsave-mcp",
       (error, stdout, stderr) => {
         if (error) console.error("Deploy failed:", stderr);
         else console.log("Deploy success:", stdout);
