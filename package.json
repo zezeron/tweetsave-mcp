@@ -1,7 +1,7 @@
 {
   "name": "tweetsave-mcp",
   "mcpName": "io.github.zezeron/tweetsave-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "TweetSave - Twitter/X analysis without the token waste. Fetch tweets, download media. Works with Cursor, Claude, VS Code, Gemini & more. Zero config → tweetsave.org",
   "type": "module",
   "main": "dist/index.js",
