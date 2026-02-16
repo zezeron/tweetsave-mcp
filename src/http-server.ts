@@ -11,6 +11,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
+import { createHmac } from "crypto";
+import { exec } from "child_process";
 
 import { fetchTweet } from "./twitter/client.js";
 import { tweetToMarkdown, tweetToBlogPost, blogPostToMarkdown } from "./utils/formatter.js";
@@ -58,6 +60,47 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
         messages: "/messages"
       }
     }));
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Deploy Webhook (GitHub push -> git pull -> rebuild -> restart)
+  // ---------------------------------------------------------------------------
+  if (url === "/deploy" && req.method === "POST") {
+    const secret = process.env.DEPLOY_SECRET;
+
+    if (!secret) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Deploy not configured" }));
+      return;
+    }
+
+    // Read request body
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(chunk as Buffer);
+    const body = Buffer.concat(chunks);
+
+    // Verify GitHub HMAC-SHA256 signature
+    const signature = req.headers["x-hub-signature-256"] as string;
+    const expected = "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
+
+    if (!signature || signature !== expected) {
+      res.writeHead(403, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Invalid signature" }));
+      return;
+    }
+
+    console.log("Deploy webhook received, starting deploy...");
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "deploying" }));
+
+    exec(
+      "cd ~/tweetsave-mcp && git pull origin main && npm install --production && npm run build && pm2 restart tweetsave-mcp",
+      (error, stdout, stderr) => {
+        if (error) console.error("Deploy failed:", stderr);
+        else console.log("Deploy success:", stdout);
+      }
+    );
     return;
   }
 
@@ -178,7 +221,8 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
       "/health": "Health check",
       "/sse": "SSE endpoint for MCP clients (GET)",
       "/messages?sessionId=X": "Message endpoint for MCP clients (POST)",
-      "/api/tweet/:id": "Direct API - Get tweet (params: format=json|markdown|blog)"
+      "/api/tweet/:id": "Direct API - Get tweet (params: format=json|markdown|blog)",
+      "/deploy": "GitHub webhook - auto deploy (POST)"
     }
   }));
 });
@@ -194,6 +238,7 @@ httpServer.listen(PORT, () => {
   console.log(`  GET  /sse                       - SSE endpoint for MCP clients`);
   console.log(`  POST /messages?sessionId=X      - Message endpoint for MCP clients`);
   console.log(`  GET  /api/tweet/:id?format=X    - Direct API (format: json|markdown|blog)`);
+  console.log(`  POST /deploy                    - GitHub webhook (auto deploy)`);
   console.log(`\nFor remote MCP access, use:`);
   console.log(`  npx mcp-remote http://localhost:${PORT}/sse`);
 });

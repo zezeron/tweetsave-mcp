@@ -67,6 +67,10 @@ Connect to hosted server - no local installation needed.
 #### Claude Code
 
 ```bash
+# Global (all projects)
+claude mcp add -s user tweetsave -- npx -y mcp-remote https://mcp.tweetsave.org/sse
+
+# Project only
 claude mcp add tweetsave -- npx -y mcp-remote https://mcp.tweetsave.org/sse
 ```
 
@@ -156,6 +160,10 @@ For offline use or development.
 #### Claude Code
 
 ```bash
+# Global (all projects)
+claude mcp add -s user tweetsave -- npx -y tweetsave-mcp
+
+# Project only
 claude mcp add tweetsave -- npx -y tweetsave-mcp
 ```
 
