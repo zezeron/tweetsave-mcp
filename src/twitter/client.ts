@@ -120,14 +120,43 @@ export async function fetchReplies(
 
 /**
  * Fetch a tweet thread (conversation)
+ *
+ * Crawls up the reply chain via in_reply_to_id to reconstruct the thread.
+ * Only follows tweets by the same author (self-replies = thread).
+ * Max 25 levels to prevent infinite loops.
  */
 export async function fetchThread(tweetIdOrUrl: string): Promise<Tweet[]> {
   const mainTweet = await fetchTweet(tweetIdOrUrl);
   const thread: Tweet[] = [mainTweet];
+  const seenIds = new Set<string>([mainTweet.id]);
 
-  // If this tweet is a reply, try to fetch parent
-  // FxTwitter includes some context but not full thread
-  // Full implementation would require crawling up the reply chain
+  // Crawl up: follow in_reply_to_id chain
+  let current = mainTweet;
+  const MAX_DEPTH = 25;
+
+  while (current.in_reply_to_id && thread.length < MAX_DEPTH) {
+    // Prevent infinite loops
+    if (seenIds.has(current.in_reply_to_id)) break;
+
+    try {
+      const parent = await fetchTweet(current.in_reply_to_id);
+      seenIds.add(parent.id);
+
+      // Only include tweets by the same author (thread = self-replies)
+      if (parent.author.username.toLowerCase() !== mainTweet.author.username.toLowerCase()) {
+        // Different author means we hit the start of the thread or a reply to someone else
+        // Still include this tweet as context (the tweet being replied to)
+        thread.unshift(parent);
+        break;
+      }
+
+      thread.unshift(parent);
+      current = parent;
+    } catch {
+      // Parent tweet unavailable (deleted, private, etc.)
+      break;
+    }
+  }
 
   return thread;
 }

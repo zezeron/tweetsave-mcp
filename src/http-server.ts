@@ -10,8 +10,10 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import { createHmac } from "crypto";
+import { createHmac, randomUUID } from "crypto";
 import { exec } from "child_process";
 
 import { fetchTweet } from "./twitter/client.js";
@@ -24,8 +26,11 @@ const PORT = process.env.PORT || 3000;
 // Session Management
 // =============================================================================
 
-// Store active SSE transports by session ID
+// Store active SSE transports by session ID (legacy)
 const transports: Record<string, SSEServerTransport> = {};
+
+// Store active Streamable HTTP transports by session ID (new protocol)
+const httpTransports: Record<string, StreamableHTTPServerTransport> = {};
 
 // =============================================================================
 // HTTP Server
@@ -34,8 +39,8 @@ const transports: Record<string, SSEServerTransport> = {};
 const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
   // CORS headers for cross-origin requests
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Mcp-Session-Id");
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
@@ -45,6 +50,58 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
   }
 
   const url = req.url || "/";
+
+  // ---------------------------------------------------------------------------
+  // MCP Streamable HTTP Endpoint (new protocol)
+  // ---------------------------------------------------------------------------
+  if (url === "/mcp") {
+    const sessionId = req.headers["mcp-session-id"] as string | undefined;
+
+    // POST: new session init or existing session message
+    if (req.method === "POST") {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) chunks.push(chunk as Buffer);
+      const body = JSON.parse(Buffer.concat(chunks).toString());
+
+      if (isInitializeRequest(body)) {
+        // New session
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          onsessioninitialized: (id) => { httpTransports[id] = transport; }
+        });
+        transport.onclose = () => {
+          if (transport.sessionId) delete httpTransports[transport.sessionId];
+        };
+        const mcpServer = new McpServer({ name: "tweetsave-mcp-server", version: "1.0.0" });
+        registerTools(mcpServer);
+        await mcpServer.connect(transport);
+        await transport.handleRequest(req, res, body);
+      } else if (sessionId && httpTransports[sessionId]) {
+        await httpTransports[sessionId].handleRequest(req, res, body);
+      } else {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid or missing session" }));
+      }
+      return;
+    }
+
+    // GET: SSE stream for existing session
+    if (req.method === "GET" && sessionId && httpTransports[sessionId]) {
+      await httpTransports[sessionId].handleRequest(req, res);
+      return;
+    }
+
+    // DELETE: terminate session
+    if (req.method === "DELETE" && sessionId && httpTransports[sessionId]) {
+      await httpTransports[sessionId].handleRequest(req, res);
+      delete httpTransports[sessionId];
+      return;
+    }
+
+    res.writeHead(400, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Bad request" }));
+    return;
+  }
 
   // ---------------------------------------------------------------------------
   // Health Check
