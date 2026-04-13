@@ -52,6 +52,29 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
   const url = req.url || "/";
 
   // ---------------------------------------------------------------------------
+  // OAuth Discovery (public server - no auth required)
+  // ---------------------------------------------------------------------------
+  if (url === "/.well-known/oauth-protected-resource") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      resource: "https://mcp.tweetsave.org",
+      authorization_servers: []
+    }));
+    return;
+  }
+
+  if (url === "/.well-known/oauth-authorization-server") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      issuer: "https://mcp.tweetsave.org",
+      response_types_supported: [],
+      grant_types_supported: [],
+      scopes_supported: []
+    }));
+    return;
+  }
+
+  // ---------------------------------------------------------------------------
   // MCP Streamable HTTP Endpoint (new protocol)
   // ---------------------------------------------------------------------------
   if (url === "/mcp") {
