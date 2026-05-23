@@ -9,6 +9,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
 import { fetchTweet, fetchThread, buildTweetUrl } from "./twitter/client.js";
+import { searchHermesTweets } from "./twitter/hermes-tweet.js";
 import { tweetToMarkdown, tweetToBlogPost, blogPostToMarkdown, tweetsToFeed } from "./utils/formatter.js";
 import { ResponseFormat, type Tweet } from "./types.js";
 
@@ -65,12 +66,28 @@ const ExtractMediaInputSchema = z.object({
     .describe("Type of media to extract: 'all', 'photos', or 'videos'")
 }).strict();
 
+const SearchTweetsInputSchema = z.object({
+  query: z.string()
+    .min(1, "Query is required")
+    .describe("Search query for public X/Twitter posts"),
+  limit: z.number()
+    .int()
+    .min(1)
+    .max(25)
+    .default(10)
+    .describe("Maximum number of tweets to return"),
+  response_format: z.nativeEnum(ResponseFormat)
+    .default(ResponseFormat.MARKDOWN)
+    .describe("Output format: 'markdown' or 'json'")
+}).strict();
+
 // Type inference
 type GetTweetInput = z.infer<typeof GetTweetInputSchema>;
 type GetThreadInput = z.infer<typeof GetThreadInputSchema>;
 type ToBlogInput = z.infer<typeof ToBlogInputSchema>;
 type BatchInput = z.infer<typeof BatchInputSchema>;
 type ExtractMediaInput = z.infer<typeof ExtractMediaInputSchema>;
+type SearchTweetsInput = z.infer<typeof SearchTweetsInputSchema>;
 
 // =============================================================================
 // Register All Tools
@@ -485,6 +502,63 @@ Examples:
           content: [{
             type: "text",
             text: `Error extracting media: ${errorMessage}`
+          }],
+          isError: true
+        };
+      }
+    }
+  );
+
+  // ---------------------------------------------------------------------------
+  // Tool: tweetsave_search_tweets
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    "tweetsave_search_tweets",
+    {
+      title: "Search Tweets",
+      description: `Search public X/Twitter posts by query using the optional Hermes Tweet/Xquik backend.
+
+This tool requires HERMES_TWEET_API_KEY or XQUIK_API_KEY in the server environment. The original TweetSave URL and ID tools still work without an API key.
+
+Args:
+  - query (string): Search query
+  - limit (number): Maximum tweets to return (default: 10, max: 25)
+  - response_format ('markdown' | 'json'): Output format (default: 'markdown')
+
+Returns:
+  Matching tweets normalized into the same TweetSave format used by batch and feed output.`,
+      inputSchema: SearchTweetsInputSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true
+      }
+    },
+    async (params: SearchTweetsInput) => {
+      try {
+        const tweets = await searchHermesTweets(params.query, params.limit);
+
+        if (params.response_format === ResponseFormat.JSON) {
+          const output = {
+            query: params.query,
+            count: tweets.length,
+            tweets
+          };
+          return {
+            content: [{ type: "text", text: JSON.stringify(output, null, 2) }]
+          };
+        }
+
+        return {
+          content: [{ type: "text", text: tweetsToFeed(tweets) }]
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{
+            type: "text",
+            text: `Error searching tweets: ${errorMessage}`
           }],
           isError: true
         };

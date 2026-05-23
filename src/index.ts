@@ -11,6 +11,7 @@
  * - tweetsave_to_blog: Convert tweet to blog post format
  * - tweetsave_batch: Fetch multiple tweets at once
  * - tweetsave_extract_media: Extract media URLs from a tweet
+ * - tweetsave_search_tweets: Search tweets with optional Hermes Tweet/Xquik config
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
