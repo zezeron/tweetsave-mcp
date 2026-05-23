@@ -37,6 +37,7 @@
 - Batch fetch multiple tweets (up to 10)
 - Support for quote tweets and polls
 - Markdown and JSON output formats
+- Optional query search through Hermes Tweet/Xquik when configured
 
 ---
 
@@ -180,6 +181,18 @@ claude mcp add tweetsave -- npx -y tweetsave-mcp
 }
 ```
 
+### Optional Tweet Search Backend
+
+Core TweetSave tools fetch known tweet URLs and IDs with no API key. To enable query search, set a Hermes Tweet/Xquik key in the server environment:
+
+```bash
+HERMES_TWEET_API_KEY=your_key
+# or XQUIK_API_KEY=your_key
+HERMES_TWEET_API_BASE=https://xquik.com
+```
+
+This enables `tweetsave_search_tweets` for public X/Twitter search while leaving the existing tools unchanged.
+
 ---
 
 ## Available Tools
@@ -229,6 +242,16 @@ Extract direct media URLs from a tweet.
 |-----------|------|---------|-------------|
 | `url` | string | required | Tweet URL or ID |
 | `media_type` | 'all' \| 'photos' \| 'videos' | 'all' | Filter type |
+
+### `tweetsave_search_tweets`
+
+Search public X/Twitter posts by query using the optional Hermes Tweet/Xquik backend.
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | required | Search query |
+| `limit` | number | 10 | Maximum tweets to return, up to 25 |
+| `response_format` | 'markdown' \| 'json' | 'markdown' | Output format |
 
 ---
 
@@ -280,6 +303,7 @@ You can run this new model on a laptop which is:
 
 - **No replies/comments**: FxTwitter API doesn't support fetching replies
 - **Rate limits**: FxTwitter has rate limits for heavy usage
+- **Search requires configuration**: `tweetsave_search_tweets` requires `HERMES_TWEET_API_KEY` or `XQUIK_API_KEY`
 - **Private tweets**: Cannot access protected/private accounts
 
 ---
